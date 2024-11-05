@@ -12,9 +12,9 @@ public class MusicPlayer extends JFrame {
     private int currentTrack = 0;
     private boolean isPaused = false; // Pause state flag
     private boolean isStopped = false; // Stop state flag
-    private String[] song = {"audio/addiction.wav", "audio/apt.wav", "audio/supersonic.wav", "audio/supernova.wav", "audio/fakeidol.wav"};
-    private String[] image = {"image/addiction.png", "image/apt.png", "image/supersonic.png", "image/supernova.jpg", "image/fakeidol.jpg"};
-    private String[] songTitles = {"Addiction", "Apt", "Supersonic", "Supernova", "Fake Idol"};
+    private String[] song = {"audio/addiction.wav", "audio/apt.wav", "audio/supersonic.wav", "audio/supernova.wav", "audio/fakeidol.wav", "audio/MyNameIs.wav", "audio/MaskOn.wav"};
+    private String[] image = {"image/addiction.png", "image/apt.png", "image/supersonic.png", "image/supernova.jpg", "image/fakeidol.jpg", "image/MyNameIs.png", "image/MaskOn.png"};
+    private String[] songTitles = {"고민중독", "Apt", "Supersonic", "Supernova", "가짜 아이돌", "My name is", "Mask On"};
     private JLabel albumLabel, timeLabel;
     private JSlider slider;
     private Timer timer; // Timer to update playback time
@@ -38,6 +38,11 @@ public class MusicPlayer extends JFrame {
 
         // Time and slider panel
         JPanel sliderPanel = new JPanel(new BorderLayout());
+        JLabel songTitleLabel = new JLabel(songTitles[currentTrack], JLabel.CENTER);
+        songTitleLabel.setBackground(Color.WHITE);
+        songTitleLabel.setOpaque(true); // Current song title display
+        songTitleLabel.setFont(loadCustomFont("font/CookieRun.ttf", 18f));
+        sliderPanel.add(songTitleLabel, BorderLayout.NORTH);
         timeLabel = new JLabel("00:00 / 00:00", JLabel.RIGHT); // Current time and total time display
         timeLabel.setOpaque(true);
         timeLabel.setBackground(Color.WHITE);
@@ -108,7 +113,7 @@ public class MusicPlayer extends JFrame {
             }
         });
 
-        setSize(600, 400); // Adjusted size for a balanced look
+        setSize(600, 446); // Adjusted size for a balanced look
         setVisible(true);
 
         slider.addChangeListener(new SliderChangeListener());
@@ -135,8 +140,10 @@ public class MusicPlayer extends JFrame {
     }
 
     private JButton createButton(String imagePath, ActionListener actionListener) {
-        ImageIcon icon = scaleImage(imagePath, 26, 26);
-        JButton button = new JButton(icon);
+        JButton button = new JButton(scaleImage(imagePath, 26, 26));
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
         button.addActionListener(actionListener);
         return button;
     }
@@ -242,6 +249,9 @@ public class MusicPlayer extends JFrame {
         requestFocusInWindow();
         stopMusic();
         loadAudio(song[currentTrack]);
+        albumLabel.setIcon(scaleImage(image[currentTrack], 300, 300));
+        JLabel songTitleLabel = (JLabel) ((JPanel) slider.getParent()).getComponent(0); // Update song title label
+        songTitleLabel.setText(songTitles[currentTrack]);
         albumLabel.setIcon(scaleImage(image[currentTrack], 300, 300));
         playlist.setSelectedIndex(currentTrack);
         playlist.repaint();
