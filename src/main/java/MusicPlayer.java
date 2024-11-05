@@ -45,21 +45,7 @@ public class MusicPlayer extends JFrame {
         timeLabel.setFont(customFont); // 사용자 지정 폰트 적용
 
         slider = new JSlider(0, 100, 0); // slider with initial settings
-        slider.setUI(new BasicSliderUI(slider) {
-            @Override
-            public void paintTrack(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setColor(new Color(240, 239, 239)); // track color
-                g2d.fillRect(trackRect.x, trackRect.y, trackRect.width, trackRect.height);
-            }
-
-            @Override
-            public void paintThumb(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setColor(new Color(200, 199, 199)); // knob color
-                g2d.fillOval(thumbRect.x, thumbRect.y, thumbRect.width, thumbRect.height);
-            }
-        });
+        slider.setUI(new CustomSliderUI(slider));
         slider.setBackground(Color.WHITE);
         slider.setForeground(Color.BLACK);
         slider.setMajorTickSpacing(10);
@@ -89,20 +75,7 @@ public class MusicPlayer extends JFrame {
         playlist.setFixedCellHeight(60);  // Set each cell height to 60 pixels
         playlist.setFixedCellWidth(200);  // Set each cell width to 200 pixels
 
-        playlist.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel renderer = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (index == currentTrack) {
-                    renderer.setBackground(Color.LIGHT_GRAY); // Highlight currently playing track
-                } else {
-                    renderer.setBackground(isSelected ? list.getSelectionBackground() : Color.WHITE);
-                }
-                renderer.setOpaque(true); // Ensure background color shows
-                renderer.setPreferredSize(new Dimension(200, 40)); // Set width 200, height 40
-                return renderer;
-            }
-        });
+        playlist.setCellRenderer(new CustomCellRenderer());
 
         JScrollPane playlistScrollPane = new JScrollPane(playlist);
         playlistScrollPane.setPreferredSize(new Dimension(200, 0)); // Half-width for playlist panel
@@ -125,28 +98,7 @@ public class MusicPlayer extends JFrame {
         });
 
         // Add KeyListener for keyboard controls
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_SPACE:
-                        System.out.println("Spacebar pressed");
-                        if (clip != null) {
-                            if (clip.isRunning()) pauseMusic();
-                            else playMusic();
-                        }
-                        break;
-                    case KeyEvent.VK_RIGHT:
-                        System.out.println("Right arrow key pressed");
-                        skipForward();
-                        break;
-                    case KeyEvent.VK_LEFT:
-                        System.out.println("Left arrow key pressed");
-                        skipBackward();
-                        break;
-                }
-            }
-        });
+        addKeyListener(new CustomKeyListener());
         setFocusable(true);
         requestFocusInWindow();
         addWindowListener(new WindowAdapter() {
@@ -159,16 +111,7 @@ public class MusicPlayer extends JFrame {
         setSize(600, 400); // Adjusted size for a balanced look
         setVisible(true);
 
-        slider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                if (slider.getValueIsAdjusting() && clip != null) {
-                    int newFrame = (int) ((slider.getValue() / 100.0) * clip.getFrameLength());
-                    clip.setFramePosition(newFrame);
-                    updateSliderAndTime();
-                }
-            }
-        });
+        slider.addChangeListener(new SliderChangeListener());
 
         loadAudio(song[currentTrack]); // Initial song load without autoplay
     }
@@ -204,11 +147,7 @@ public class MusicPlayer extends JFrame {
             final AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
 
             clip = AudioSystem.getClip();
-            clip.addLineListener(e -> {
-                if (e.getType() == LineEvent.Type.STOP && !isPaused && !isStopped) {
-                    playNextTrack();
-                }
-            });
+            clip.addLineListener(new ClipLineListener());
             clip.open(audioStream);
             slider.setEnabled(true);
             updateSliderAndTime();
@@ -221,6 +160,7 @@ public class MusicPlayer extends JFrame {
     }
 
     private void playMusic() {
+        requestFocusInWindow();
         if (clip != null) {
             clip.start();
             isPaused = false; // Reset paused state
@@ -299,6 +239,7 @@ public class MusicPlayer extends JFrame {
     }
 
     private void playSelectedTrack() {
+        requestFocusInWindow();
         stopMusic();
         loadAudio(song[currentTrack]);
         albumLabel.setIcon(scaleImage(image[currentTrack], 300, 300));
@@ -309,5 +250,85 @@ public class MusicPlayer extends JFrame {
 
     public static void main(String[] args) {
         new MusicPlayer();
+    }
+
+    // Custom Slider UI class
+    private class CustomSliderUI extends BasicSliderUI {
+        public CustomSliderUI(JSlider slider) {
+            super(slider);
+        }
+
+        @Override
+        public void paintTrack(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setColor(new Color(240, 239, 239)); // track color
+            g2d.fillRect(trackRect.x, trackRect.y, trackRect.width, trackRect.height);
+        }
+
+        @Override
+        public void paintThumb(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setColor(new Color(200, 199, 199)); // knob color
+            g2d.fillOval(thumbRect.x, thumbRect.y, thumbRect.width, thumbRect.height);
+        }
+    }
+
+    // Custom Cell Renderer for the playlist
+    private class CustomCellRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            JLabel renderer = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (index == currentTrack) {
+                renderer.setBackground(Color.LIGHT_GRAY); // Highlight currently playing track
+            } else {
+                renderer.setBackground(isSelected ? list.getSelectionBackground() : Color.WHITE);
+            }
+            renderer.setOpaque(true); // Ensure background color shows
+            renderer.setPreferredSize(new Dimension(200, 40)); // Set width 200, height 40
+            return renderer;
+        }
+    }
+
+    // Custom Key Listener for keyboard controls
+    private class CustomKeyListener extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_SPACE:
+                    if (clip != null) {
+                        if (clip.isRunning()) pauseMusic();
+                        else playMusic();
+                    }
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    skipForward();
+                    break;
+                case KeyEvent.VK_LEFT:
+                    skipBackward();
+                    break;
+            }
+        }
+    }
+
+    // Custom Line Listener for Clip events
+    private class ClipLineListener implements LineListener {
+        @Override
+        public void update(LineEvent e) {
+            if (e.getType() == LineEvent.Type.STOP && !isPaused && !isStopped) {
+                playNextTrack();
+            }
+        }
+    }
+
+    // Custom Change Listener for Slider changes
+    private class SliderChangeListener implements ChangeListener {
+        @Override
+        public void stateChanged(ChangeEvent e) {
+            if (slider.getValueIsAdjusting() && clip != null) {
+                int newFrame = (int) ((slider.getValue() / 100.0) * clip.getFrameLength());
+                clip.setFramePosition(newFrame);
+                updateSliderAndTime();
+            }
+        }
     }
 }
