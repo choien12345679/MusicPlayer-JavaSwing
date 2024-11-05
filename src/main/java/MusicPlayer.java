@@ -25,6 +25,9 @@ public class MusicPlayer extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
+        // 사용자 지정 폰트 로드
+        Font customFont = loadCustomFont("font/CookieRun.ttf", 14f);
+
         // Left Panel: Album image, time display, controls
         JPanel playerPanel = new JPanel(new BorderLayout());
         playerPanel.setBackground(Color.WHITE);
@@ -39,7 +42,7 @@ public class MusicPlayer extends JFrame {
         timeLabel.setOpaque(true);
         timeLabel.setBackground(Color.WHITE);
         timeLabel.setForeground(Color.BLACK);
-        timeLabel.setFont(new Font("Arial", Font.PLAIN, 14)); // Increased font size for better readability
+        timeLabel.setFont(customFont); // 사용자 지정 폰트 적용
 
         slider = new JSlider(0, 100, 0); // slider with initial settings
         slider.setUI(new BasicSliderUI(slider) {
@@ -82,7 +85,10 @@ public class MusicPlayer extends JFrame {
         playlist = new JList<>(songTitles);
         playlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         playlist.setSelectedIndex(currentTrack);
-        playlist.setFont(new Font("Arial", Font.PLAIN, 14)); // Increased font size
+        playlist.setFont(customFont); // 사용자 지정 폰트 적용
+        playlist.setFixedCellHeight(60);  // Set each cell height to 60 pixels
+        playlist.setFixedCellWidth(200);  // Set each cell width to 200 pixels
+
         playlist.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -93,6 +99,7 @@ public class MusicPlayer extends JFrame {
                     renderer.setBackground(isSelected ? list.getSelectionBackground() : Color.WHITE);
                 }
                 renderer.setOpaque(true); // Ensure background color shows
+                renderer.setPreferredSize(new Dimension(200, 40)); // Set width 200, height 40
                 return renderer;
             }
         });
@@ -117,8 +124,37 @@ public class MusicPlayer extends JFrame {
             }
         });
 
-        // Keyboard controls using InputMap and ActionMap
-        setupKeyboardControls();
+        // Add KeyListener for keyboard controls
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_SPACE:
+                        System.out.println("Spacebar pressed");
+                        if (clip != null) {
+                            if (clip.isRunning()) pauseMusic();
+                            else playMusic();
+                        }
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        System.out.println("Right arrow key pressed");
+                        skipForward();
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        System.out.println("Left arrow key pressed");
+                        skipBackward();
+                        break;
+                }
+            }
+        });
+        setFocusable(true);
+        requestFocusInWindow();
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowActivated(WindowEvent e) {
+                requestFocusInWindow();
+            }
+        });
 
         setSize(600, 400); // Adjusted size for a balanced look
         setVisible(true);
@@ -137,37 +173,15 @@ public class MusicPlayer extends JFrame {
         loadAudio(song[currentTrack]); // Initial song load without autoplay
     }
 
-    private void setupKeyboardControls() {
-        // Toggle play/pause with space, skip forward/backward with arrow keys
-        InputMap inputMap = this.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = this.getRootPane().getActionMap();
-
-        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "playPause");
-        actionMap.put("playPause", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (clip != null) {
-                    if (clip.isRunning()) pauseMusic();
-                    else playMusic();
-                }
-            }
-        });
-
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "skipForward");
-        actionMap.put("skipForward", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                skipForward();
-            }
-        });
-
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "skipBackward");
-        actionMap.put("skipBackward", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                skipBackward();
-            }
-        });
+    private Font loadCustomFont(String path, float size) {
+        try {
+            InputStream is = new FileInputStream(path);
+            Font font = Font.createFont(Font.TRUETYPE_FONT, is);
+            return font.deriveFont(size);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+            return new Font("Arial", Font.PLAIN, (int) size); // 기본 폰트로 대체
+        }
     }
 
     private ImageIcon scaleImage(String path, int width, int height) {
@@ -232,7 +246,6 @@ public class MusicPlayer extends JFrame {
         }
     }
 
-
     private void pauseMusic() {
         if (clip != null && clip.isRunning()) {
             isPaused = true;
@@ -259,6 +272,7 @@ public class MusicPlayer extends JFrame {
             } else {
                 playNextTrack();
             }
+            updateSliderAndTime();
         }
     }
 
@@ -270,6 +284,7 @@ public class MusicPlayer extends JFrame {
             } else {
                 clip.setFramePosition(0);
             }
+            updateSliderAndTime();
         }
     }
 
