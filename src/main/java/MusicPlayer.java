@@ -9,7 +9,7 @@ import java.io.*;
 
 public class MusicPlayer extends JFrame {
     private Clip clip; // 현재 재생중인 오디오 클립 객체
-    private int currentTrack = 0; // 현재 트랙 인덱스
+    private int currentTrack = 0; // 현재 트랙
     private boolean isPaused = false; // 일시정지 상태를 나타내는 플래그
     private boolean isStopped = false; // 정지 상태를 나타내는 플래그
     private String[] song = {"audio/addiction.wav", "audio/apt.wav", "audio/supersonic.wav", "audio/supernova.wav", "audio/fakeidol.wav", "audio/MyNameIs.wav", "audio/MaskOn.wav"}; // 오디오 파일 배열
@@ -73,7 +73,7 @@ public class MusicPlayer extends JFrame {
 
         playerPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // 오른쪽 패널: 재생 목록
+        // 오른쪽 패널: 재생 목록 (추가기능)
         playlist = new JList<>(songTitles);
         playlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         playlist.setSelectedIndex(currentTrack);
@@ -92,7 +92,7 @@ public class MusicPlayer extends JFrame {
         splitPane.setResizeWeight(0.5);
         add(splitPane, BorderLayout.CENTER);
 
-        // 재생 목록 클릭 이벤트 처리
+        // 재생 목록 클릭 이벤트 처리 (추가기능)
         playlist.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -103,7 +103,7 @@ public class MusicPlayer extends JFrame {
             }
         });
 
-        // 키보드 컨트롤 추가
+        // 키보드 컨트롤 추가 (추가기능)
         addKeyListener(new CustomKeyListener());
         setFocusable(true);
         requestFocusInWindow();
@@ -121,7 +121,7 @@ public class MusicPlayer extends JFrame {
 
         loadAudio(song[currentTrack]); // 초기 곡 로드, 자동 재생은 하지 않음
     }
-
+    //폰트 생성 오류 있을시 기본 폰트 사용 (추가기능)
     private Font loadCustomFont(String path, float size) {
         try {
             InputStream is = new FileInputStream(path);
@@ -208,7 +208,7 @@ public class MusicPlayer extends JFrame {
         }
     }
 
-    // 음악 정지 메서드
+    // 음악 정지 메서드 -> 정지 버튼 클릭시 시간 0으로 초기화
     private void stopMusic() {
         if (clip != null) {
             clip.stop();
@@ -234,14 +234,14 @@ public class MusicPlayer extends JFrame {
         playSelectedTrack();
     }
 
-    // 선택된 트랙 재생 메서드
+    // 선택된 트랙 재생 메서드 (추가기능)
     private void playSelectedTrack() {
         loadAudio(song[currentTrack]);
         albumLabel.setIcon(scaleImage(image[currentTrack], 300, 300));
         playMusic();
     }
 
-    // 커스텀 키 리스너
+    // 커스텀 키 리스너 -> 스페이스바는 일시정지, 오른쪽왼쪽 방향키는 5초 건너뛰기
     private class CustomKeyListener extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
@@ -290,7 +290,7 @@ public class MusicPlayer extends JFrame {
         }
     }
 
-    // 재생 목록 커스텀 셀 렌더러 
+    // 재생 목록 커스텀 셀 렌더러
     private class CustomCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
